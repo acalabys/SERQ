@@ -1,29 +1,59 @@
-SERQ — ICLR Code Submission README
+# SERQ : Saliency-aware Low-rank Error Reconstruction for LLM Quantization
+## 📌 Abstract
+Post-training quantization (PTQ) has emerged as a prevailing technique for de-
+ploying large language models (LLMs) efficiently in terms of both memory and
+computation, across edge devices and server platforms. Existing PTQ methods
+primarily aim to reduce precision in weights and activations by mitigating quan-
+tization errors caused by channel-wise outlier activations (e.g., pre-quantization
+scaling, online transformations, or low-rank error reconstruction). Among these
+approaches, error reconstruction with low-rank adaptation (LoRA) has proven par-
+ticularly effective, as it introduces a lightweight auxiliary computation path with-
+out requiring heavy optimization or additional online layers. However, prior stud-
+ies reveal severe accuracy degradation under W4A4 settings, and conventional
+low-rank adaptations rely on two sequential factors, necessitating intermediate
+quantization during inference and thereby limiting low-precision efficiency. In this
+work, we propose SERQ, a saliency-aware error reconstruction method for low-
+bit LLM inference that employs a single low-rank compensation matrix. SERQ
+preserves efficient 4-bit matrix multiplication in linear layers by jointly mitigating
+quantization errors arising from both activation and weight saliency through three
+stages: (1) static activation flattening, (2) saliency-aware error reconstruction, and
+(3) offline weight permutation. The method incurs additional computation only
+for low-rank error reconstruction via a single decomposition, while all other oper-
+ations are performed offline, thereby keeping latency overhead minimal. Empir-
+ically, SERQ outperforms prior error reconstruction methods under both W4A8
+and W4A4 settings, and achieves higher accuracy than state-of-the-art rotation-
+based W4A4 approaches, while substantially reducing calibration complexity.
 
-Minimal, reproducible pipeline to (1) calibrate, (2) apply GPTQ, and (3) evaluate PPL & zero-shot.
-All quantization behavior is controlled via serq_quant/int_cfg.py.
+---
 
-0) Environment
-# (optional) clean env
+## 0) Environment (optional)
+
+```
 conda create -n serq python=3.11
 conda activate serq
+```
 
-# core deps
+## 1) Requirement
+```
 pip3 install torch
 pip install transformers==4.53.0
 pip install tensorboard
 pip install datasets
 pip install accelerate
 pip install lm-eval
+```
 
-Repository Layout (expected)
+## 2) Run
+
+the below shows overall repository layout.
+```
 .
 ├─ modeling/
-│  └─ modeling_llama.py
+│  └─ ...                # include supported model architecture
 ├─ serq_quant/
-│  ├─ int_cfg.py         # qphase, mxfp, and all quant settings
-│  ├─ int_quant.py
-│  └─ observers.py
+│  ├─ int_cfg.py         # qphase, mxfp, and all quantization configuration
+│  ├─ int_quant.py       # Linear layer which conduct the actual quantization
+│  └─ observers.py       # modules for calibration
 ├─ utils/
 │  ├─ data_utils.py
 │  ├─ gptq_utils.py
@@ -33,98 +63,80 @@ Repository Layout (expected)
 ├─ run_gptq.py
 ├─ eval_ppl.py
 └─ eval_0shot.py
+```
 
-Key Configs — serq_quant/int_cfg.py
+When evaluating the model, the model behavior differs depending on the `qphase`.
++ qphase 1 : calibration mode
++ qphase 777 : mode for applying GPTQ
++ qphase 3 : evaluation mode
+<br>
 
-qphase (execution mode):
+### ➡️ Calibration
 
-0: baseline sim
+This is a step to find activation distribution for 128 samples
+```
+python run_calib.py \
+  --model_path meta-llama/Llama-2-7b-hf \
+  --qphase 1
+```
+When the command above is executed, the model that has completed calibration is saved in the `models/` directory.
 
-1: calibration
+<br>
 
-777: GPTQ
+### ➡️ Apply GPTQ
 
-3: evaluation (PPL / zero-shot)
-
-mxfp (MXFP4 path toggle):
-
-1: enable MXFP4 (on-the-fly quantization)
-
-0: disable MXFP4 (e.g., use a pre-quantized GPTQ model)
-
-All quantization behavior is governed by these arguments.
-
-1) Calibration
-
-Set qphase = 1 in serq_quant/int_cfg.py, then run:
-
-python calibration.py
-
-
-Artifacts (stats/caches) are written under models/ (as defined in the script).
-
-2) Apply GPTQ
-
-Set qphase = 777 in serq_quant/int_cfg.py, then run:
-
+We recommand applying the GPTQ method to further improve performance in weight quantization.
+Especially, it is applied in a way that is compatible with our offline processing methods (e.g., Activation Flattening, Weight Permutation).
+```
 python run_gptq.py \
-  --model_path ./models/Llama-2-7b-hf \
-  --output_dir ./models/Llama-2-7b_gptq \
-  --w_groupsize 128
+  --model_path ./models/<model-name> \
+  --output_dir ./models/<name-to-save> \
+  --w_bits 4 \
+  --w_groupsize 128 \
+  --qphase 777
+```
+When the command above is executed, the model that has completed GPTQ application is saved in the `models/` directory.
 
+<br>
 
-Key args
+### ➡️ Evaluation
 
---model_path: the calibrated HF model path
-
---output_dir: destination for the GPTQ checkpoint
-
---w_groupsize: GPTQ group size (e.g., 32/64/128)
-
-3) Evaluate Perplexity (PPL)
-
-Set qphase = 3 in serq_quant/int_cfg.py.
-
-(A) MXFP4 path (on-the-fly)
-
-Set mxfp default to 1
-
-Use the calibrated (non-GPTQ) model
-
++ integer quantization
+```
 python eval_ppl.py \
-  --model_path ./models/Llama-2-7b-hf \
-  --quantize
+  --model_path ./models/<gptq-model-name> \
+  --qphase 3 \
+  --qnw 4 \
+  --qna 4 \
+  --asym
+```
+```
+python eval_0shot.py \
+  --model_path ./models/<gptq-model-name> \
+  --tasks mmlu \
+  --qphase 3 \
+  --qnw 4 \
+  --qna 4 \
+  --asym
+```
 
-(B) GPTQ checkpoint
-
-Set mxfp default to 0
-
-Use the GPTQ model
-
++ mxfp4
+```
 python eval_ppl.py \
-  --model_path ./models/Llama-2-7b_gptq
-
-4) Zero-Shot Evaluation
-
-Set qphase = 3 in serq_quant/int_cfg.py.
-
-(A) MXFP4 version
-
-mxfp default = 1
-
-Use the calibrated (non-GPTQ) model
-
+  --model_path ./models/<calib-model-name> \
+  --quantize \
+  --qphase 3 \
+  --qnw 4 \
+  --qna 4 \
+  --mxfp4
+```
+```
 python eval_0shot.py \
-  --model_args ./models/Llama-2-7b-hf \
-  --tasks piqa \
-  --quantize
-
-(B) GPTQ version
-
-mxfp default = 0
-
-Use the GPTQ model
-
-python eval_0shot.py \
-  --model_args ./models/Llama-2-7b_gptq \
-  --tasks piqa
+  --model_path ./models/<calib-model-name> \
+  --tasks mmlu \
+  --quantize \
+  --qphase 3 \
+  --qnw 4 \
+  --qna 4 \
+  --mxfp4
+```
