@@ -1,4 +1,5 @@
 # SERQ : Saliency-aware Low-rank Error Reconstruction for LLM Quantization
+![main method](./img/Method.pdf)
 ## 📌 Abstract
 Post-training quantization (PTQ) has emerged as a prevailing technique for de-
 ploying large language models (LLMs) efficiently in terms of both memory and
@@ -140,3 +141,4 @@ python eval_0shot.py \
   --qna 4 \
   --mxfp4
 ```
+
