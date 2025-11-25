@@ -3,7 +3,7 @@
 #include <common.h>
 
 void matmul_host(
-    uint32_t m, uint32_t n, uint32_t k,
+    int m, int n, int k,
     float alpha, float beta,
-    const Fp4Storage* A_ptr, const Fp4Storage* B_ptr, const bfloat16* C_ptr, const bfloat16* D_ptr,
-    const uint8_t* SFA_ptr, const uint8_t* SFB_ptr);
+    const cutlass::float_e2m1_t* A_ptr, const cutlass::float_e2m1_t* B_ptr, const cutlass::bfloat16_t* C_ptr, const cutlass::bfloat16_t* D_ptr,
+    const cutlass::float_ue8m0_t* SFA_ptr, const cutlass::float_ue8m0_t* SFB_ptr);

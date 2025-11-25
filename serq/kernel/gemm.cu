@@ -15,16 +15,18 @@
 #include <cutlass/gemm/kernel/tile_scheduler_params.h>
 #include <cutlass/util/packed_stride.hpp>
 
+#include <gemm.h>
+
 // Keep the same GEMM kernel configurations from the example
 using namespace cute;
 
 // A matrix configuration
-using         ElementA    = cutlass::nv_float4_t<cutlass::float_e2m1_t>;
+using         ElementA    = cutlass::mx_float4_t<cutlass::float_e2m1_t>;
 using         LayoutATag  = cutlass::layout::RowMajor;
 constexpr int AlignmentA  = 32;
 
 // B matrix configuration
-using         ElementB    = cutlass::nv_float4_t<cutlass::float_e2m1_t>;
+using         ElementB    = cutlass::mx_float4_t<cutlass::float_e2m1_t>;
 using         LayoutBTag  = cutlass::layout::ColumnMajor;
 constexpr int AlignmentB  = 32;
 
@@ -74,13 +76,13 @@ using GemmKernel = cutlass::gemm::kernel::GemmUniversal<
 using Gemm = cutlass::gemm::device::GemmUniversalAdapter<GemmKernel>;
 
 void matmul_host(
-    uint32_t m, uint32_t n, uint32_t k,
+    int m, int n, int k,
     float alpha, float beta,
-    const Fp4Storage* A_ptr, 
-    const Fp4Storage* B_ptr, 
-    const bfloat16* C_ptr, 
-    const bfloat16* D_ptr,
-    const uint8_t* SFA_ptr, const uint8_t* SFB_ptr) {
+    const cutlass::float_e2m1_t* A_ptr, 
+    const cutlass::float_e2m1_t* B_ptr, 
+    const cutlass::bfloat16_t* C_ptr, 
+    const cutlass::bfloat16_t* D_ptr,
+    const cutlass::float_ue8m0_t* SFA_ptr, const cutlass::float_ue8m0_t* SFB_ptr) {
 
     using StrideA   = typename Gemm::GemmKernel::StrideA;
     using LayoutSFA = typename Gemm::GemmKernel::CollectiveMainloop::LayoutSFA;
@@ -96,8 +98,8 @@ void matmul_host(
     StrideC stride_C = cutlass::make_cute_packed_stride(StrideC{}, {m, n, 1});
     StrideD stride_D = cutlass::make_cute_packed_stride(StrideD{}, {m, n, 1});
 
-    LayoutSFA layout_SFA = Sm1xxBlkScaledConfig::tile_atom_to_shape_SFA(cute::make_shape(m, n, k, 1));
-    LayoutSFB layout_SFB = Sm1xxBlkScaledConfig::tile_atom_to_shape_SFB(cute::make_shape(m, n, k, 1));
+    LayoutSFA layout_SFA = Sm1xxBlkScaledConfig::tile_atom_to_shape_SFA(cute::make_shape((int)m, (int)n, (int)k, 1));
+    LayoutSFB layout_SFB = Sm1xxBlkScaledConfig::tile_atom_to_shape_SFB(cute::make_shape((int)m, (int)n, (int)k, 1));
 
     typename Gemm::Arguments arguments {
         cutlass::gemm::GemmUniversalMode::kGemm,
@@ -118,7 +120,7 @@ void matmul_host(
     Gemm gemm;
 
     auto status = gemm.run(arguments);
-    ensure(status == cutlass::Status::kSuccess, cutlass::status_to_string(status));
+    ensure(status == cutlass::Status::kSuccess, cutlassGetStatusString(status));
 
     // if (gemm.can_implement(arguments) != cutlass::Status::kSuccess) {
     //     throw std::runtime_error("GEMM kernel cannot be implemented for the given problem size.");
