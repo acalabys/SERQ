@@ -3,3 +3,6 @@ __pycache__/
 
 ### model params ###
 models/*
+
+### cuda build ###
+serq/_CUDA*
