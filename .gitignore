@@ -3,6 +3,3 @@ __pycache__/
 
 ### model params ###
 models/*
-
-### third-party code ###
-third_party/*
