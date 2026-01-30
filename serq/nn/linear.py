@@ -1,6 +1,6 @@
 import torch
 import serq
-from serq_quant.int_quant import SVDLinear
+# from serq_quant.int_quant import SVDLinear
 
 class Linear4bit(torch.nn.Module):
     def __init__(self, in_features, out_features, bias=False, dtype=torch.float16):
@@ -54,32 +54,32 @@ class Linear4bit(torch.nn.Module):
             return out 
 
 
-    @staticmethod
-    def from_float(module: SVDLinear):
-        '''
-        Generate a new Linear4bit module from a FP16 Linear module.
-        The weight matrix should have the same shape as the weight matrix of the FP16 Linear module and rounded using torch.round()
-        routine. We will convert it to subByte representation and save it in the int_weight buffer.
-        '''
-        # To-do!
+    # @staticmethod
+    # def from_float(module: SVDLinear):
+    #     '''
+    #     Generate a new Linear4bit module from a FP16 Linear module.
+    #     The weight matrix should have the same shape as the weight matrix of the FP16 Linear module and rounded using torch.round()
+    #     routine. We will convert it to subByte representation and save it in the int_weight buffer.
+    #     '''
+    #     # To-do!
         
-        int_module = Linear4bit(module.in_features, module.out_features, bias=module.bias is not None, dtype=module.weight_matrix.dtype)
+    #     int_module = Linear4bit(module.in_features, module.out_features, bias=module.bias is not None, dtype=module.weight_matrix.dtype)
         
-        # main weight quantization
-        assert module.weight.dtype == torch.bfloat16
-        module.weight.cuda()
-        weight_matrix, SF_w = serq.simple_quantize_mxfp4(module.weight)
-        int_module.weight.copy_(weight_matrix.cpu())
-        int_module.SF_w.copy_(SF_w.cpu())
+    #     # main weight quantization
+    #     assert module.weight.dtype == torch.bfloat16
+    #     module.weight.cuda()
+    #     weight_matrix, SF_w = serq.simple_quantize_mxfp4(module.weight)
+    #     int_module.weight.copy_(weight_matrix.cpu())
+    #     int_module.SF_w.copy_(SF_w.cpu())
 
-        # low-rank weight quantization
-        assert module.lora_R.dtype == torch.bfloat16
-        module.lora_R.cuda()
-        low_rank_weight, SF_low_rank_weight = serq.simple_quantize_mxfp4(module.lora_R)
-        int_module.low_rank_weight.copy_(low_rank_weight.cpu())
-        int_module.SF_low_rank_weight.copy_(SF_low_rank_weight.cpu())
+    #     # low-rank weight quantization
+    #     assert module.lora_R.dtype == torch.bfloat16
+    #     module.lora_R.cuda()
+    #     low_rank_weight, SF_low_rank_weight = serq.simple_quantize_mxfp4(module.lora_R)
+    #     int_module.low_rank_weight.copy_(low_rank_weight.cpu())
+    #     int_module.SF_low_rank_weight.copy_(SF_low_rank_weight.cpu())
 
-        if module.bias is not None:
-            int_module.bias.copy_(module.bias)
+    #     if module.bias is not None:
+    #         int_module.bias.copy_(module.bias)
         
-        return int_module
+    #     return int_module

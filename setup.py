@@ -3,6 +3,7 @@ import torch.utils.cpp_extension as torch_cpp_ext
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 import os
 import pathlib
+
 setup_dir = os.path.dirname(os.path.realpath(__file__))
 HERE = pathlib.Path(__file__).absolute().parent
 

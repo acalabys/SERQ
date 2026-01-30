@@ -6,3 +6,7 @@ models/*
 
 ### cuda build ###
 serq/*.so
+
+### e2e build ###
+build/
+serq.egg-info/

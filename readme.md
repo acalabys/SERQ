@@ -134,7 +134,7 @@ python eval_ppl.py \
 ```
 python eval_0shot.py \
   --model_path ./models/<calib-model-name> \
-  --tasks mmlu \
+  --tasks piqa \
   --quantize \
   --qphase 3 \
   --qnw 4 \
@@ -143,3 +143,24 @@ python eval_0shot.py \
 ```
 
 
+### ➡️ e2e evaluation
+We simulate it on cuda 13.0.0 and NIVIDA RTX PRO 6000 with Blackwell architecture. blackwell architecture is required because MXFP4 kernel is only supported by Blackwell
+```
+conda install -c nvidia/label/cuda-13.0.0 -c conda-forge cuda-toolkit
+pip install torch==2.9.0 --index-url https://download.pytorch.org/whl/cu130
+```
+We design a custom kernel with cutlass, so you should install cutlass first.
+```
+git submodule init && git submodule update 
+```
+(optional) if you're having a strunggle with install problem.
+```
+export LD_LIBRARY_PATH=/home/yspark/anaconda3/envs/serq/cuda/lib64:/home/yspark/anaconda3/envs/serq/lib
+```
+```
+export CCCL_INC="$CONDA_PREFIX/targets/x86_64-linux/include/cccl"
+export CPLUS_INCLUDE_PATH="$CCCL_INC:$CPLUS_INCLUDE_PATH"
+```
+```
+pip install -e . --no-build-isolation
+```

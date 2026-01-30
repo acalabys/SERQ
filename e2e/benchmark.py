@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import time
 
-from e2e.modeling_llama import modeling_llama
+from modeling_llama import modeling_llama
 import torch
 import transformers
 import serq
