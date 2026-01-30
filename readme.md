@@ -30,8 +30,8 @@ based W4A4 approaches, while substantially reducing calibration complexity.
 ## 0) Environment (optional)
 
 ```
-conda create -n serq python=3.11
-conda activate serq
+conda create -n proj_serq python=3.11
+conda activate proj_serq
 ```
 
 ## 1) Requirement
@@ -46,7 +46,7 @@ pip install lm-eval
 
 ## 2) Run
 
-the below shows overall repository layout.
+The below shows overall repository layout.
 ```
 .
 ├─ modeling/
@@ -151,7 +151,7 @@ A CUTLASS installation is required to build our custom kernels.
 ```
 git submodule init && git submodule update 
 ```
-(optional) the below settings might be required:
+(optional) The below settings might be required:
 ```
 export LD_LIBRARY_PATH=/home/yspark/anaconda3/envs/serq/cuda/lib64:/home/yspark/anaconda3/envs/serq/lib
 export CCCL_INC="$CONDA_PREFIX/targets/x86_64-linux/include/cccl"
@@ -167,3 +167,4 @@ pip install -e . --no-build-isolation
 ```
 python e2e/benchmark.py
 ```
+
