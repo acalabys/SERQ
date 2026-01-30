@@ -70,7 +70,7 @@ When evaluating the model, the model behavior differs depending on the `qphase`.
 + qphase 1 : calibration mode
 + qphase 777 : mode for applying GPTQ
 + qphase 3 : evaluation mode
-<br>
+
 
 ### ➡️ Calibration
 
@@ -82,7 +82,6 @@ python run_calib.py \
 ```
 When the command above is executed, the model that has completed calibration is saved in the `models/` directory.
 
-<br>
 
 ### ➡️ Apply GPTQ
 
@@ -98,7 +97,6 @@ python run_gptq.py \
 ```
 When the command above is executed, the model that has completed GPTQ application is saved in the `models/` directory.
 
-<br>
 
 ### ➡️ Evaluation
 
@@ -142,25 +140,30 @@ python eval_0shot.py \
   --mxfp4
 ```
 
-
-### ➡️ e2e evaluation
-We simulate it on cuda 13.0.0 and NIVIDA RTX PRO 6000 with Blackwell architecture. blackwell architecture is required because MXFP4 kernel is only supported by Blackwell
+## 3) e2e benchmark
+### ➡️ Setting
+We conducted simulations using CUDA 13.0 on NVIDIA RTX PRO 6000 GPU. The Blackwell architecture was required, as the MXFP4 kernel is exculsively supported by it.
 ```
 conda install -c nvidia/label/cuda-13.0.0 -c conda-forge cuda-toolkit
 pip install torch==2.9.0 --index-url https://download.pytorch.org/whl/cu130
 ```
-We design a custom kernel with cutlass, so you should install cutlass first.
+A CUTLASS installation is required to build our custom kernels.
 ```
 git submodule init && git submodule update 
 ```
-(optional) if you're having a strunggle with install problem.
+(optional) the below settings might be required:
 ```
 export LD_LIBRARY_PATH=/home/yspark/anaconda3/envs/serq/cuda/lib64:/home/yspark/anaconda3/envs/serq/lib
-```
-```
 export CCCL_INC="$CONDA_PREFIX/targets/x86_64-linux/include/cccl"
 export CPLUS_INCLUDE_PATH="$CCCL_INC:$CPLUS_INCLUDE_PATH"
 ```
+Finally, run the below command to build our kerenls.
 ```
 pip install -e . --no-build-isolation
+```
+
+
+### ➡️ Evaluation 
+```
+python e2e/benchmark.py
 ```
