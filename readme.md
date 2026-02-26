@@ -165,6 +165,7 @@ pip install -e . --no-build-isolation
 
 ### ➡️ Evaluation 
 ```
-python e2e/benchmark.py
+python e2e/benchmark.py 
 ```
+
 
