@@ -8,5 +8,6 @@ models/*
 serq/*.so
 
 ### e2e build ###
+e2e/
 build/
 serq.egg-info/
